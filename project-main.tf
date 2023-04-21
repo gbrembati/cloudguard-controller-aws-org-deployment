@@ -51,11 +51,6 @@ resource "random_string" "sts-external-id" {
   lower = true
   upper = false
 }
-
-output "my-external-id" {
-  value = random_string.sts-external-id.result
-}
-
 # Creating the Cross account role in all the child accounts
 resource "aws_cloudformation_stack_set" "cloudguard-controller-org-permissions" {
   name = "cloudguard-controller-permissions"

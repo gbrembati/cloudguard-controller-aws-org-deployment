@@ -2,7 +2,7 @@
 This Terraform project is intended to create all the configuration for a deployment of CloudGuard Controller in an entire AWS organization. The project takes care of configure both the AWS components as well as creating the AWS Datacenters in the Check Point management.      
 
 ## Get API credentials for your user in the management 
-First you would need to have access to the Check Point management to create the objects, this is how you create an user:
+You would need to have access to the Check Point management to create the objects, this is how you create an user:
 
 ![Architectural Design](/resources/chkp-api-user-creation.jpg)
 

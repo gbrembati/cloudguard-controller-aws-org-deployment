@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Create a read-only cross account role that authorizes access for Check Point CloudGuard Controller
+Metadata:
+  Version: 2.0.0
+Parameters:
+  RootAwsAccountId:
+    Description: AWS Master account-id, from which the CloudGuard controller initiate the Assume role
+    Type: String
+  RoleExternalTrustSecret:
+    Description: Security method to validate the cross-account trust
+    Type: String
+Resources:
+  CrossAccountRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub CloudGuard-Controller-RO-role
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub arn:aws:iam::${RootAwsAccountId}:root
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref RoleExternalTrustSecret
+  CrossAccountReadOnlyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub CloudGuard-Controller-RO-policy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: CloudGuardControllerReadOnly
+            Action:
+              - ec2:DescribeInstances,
+              - ec2:DescribeNetworkInterfaces,
+              - ec2:DescribeSubnets,
+              - ec2:DescribeVpcs,
+              - ec2:DescribeSecurityGroups,
+              - ec2:DescribeVpnGateways,
+              - ec2:DescribeVpnConnections,
+              - ec2:DescribeCustomerGateways,
+              - elasticloadbalancing:DescribeTags,
+              - elasticloadbalancing:DescribeLoadBalancers
+            Effect: Allow
+            Resource: '*'
+      Roles:
+        - !Ref CrossAccountRole
+Outputs:
+  CrossAccountRoleArn:
+    Description: The CrossAccount Role Arn
+    Value: !GetAtt CrossAccountRole.Arn

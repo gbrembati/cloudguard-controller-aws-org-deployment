@@ -19,8 +19,8 @@ variable "aws-secret-key" {
 variable "chkp-management" {
   description = "The management that we would like to configure"
   type = object({
-    name    = string
     server  = string
+    name    = optional(string)
     domain  = optional(string)
     smart1cloud-id  = optional(string)
   })

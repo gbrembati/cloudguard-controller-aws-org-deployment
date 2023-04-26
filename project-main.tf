@@ -9,40 +9,57 @@ resource "aws_iam_user" "chkp-cg-controller-user" {
 resource "aws_iam_access_key" "chkp-cg-controller-key" {
   user = aws_iam_user.chkp-cg-controller-user.name
 }
-data "aws_iam_policy_document" "chkp-cg-controller-pdocument" {
-  statement {
-    effect    = "Allow"
-    actions   = [ 
-        "ec2:DescribeInstances",
-        "ec2:DescribeNetworkInterfaces",
-        "ec2:DescribeSubnets",
-        "ec2:DescribeVpcs",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeVpnGateways",
-        "ec2:DescribeVpnConnections",
-        "ec2:DescribeCustomerGateways",
-        "elasticloadbalancing:DescribeTags",
-        "elasticloadbalancing:DescribeLoadBalancers"]
-    resources = ["*"]
-  }
+
+resource "aws_iam_policy" "chkp-cg-controller-read-policy" {
+  name        = "chkp-cg-controller-read-policy"
+  path        = "/"
+  description = "IAM Policy used to read datacenter objects from the master account"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeVpnGateways",
+          "ec2:DescribeVpnConnections",
+          "ec2:DescribeCustomerGateways",
+          "elasticloadbalancing:DescribeTags",
+          "elasticloadbalancing:DescribeLoadBalancers" ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+    ]
+  })
 }
-resource "aws_iam_user_policy" "chkp-cg-controller-policy" {
-  name   = "chkp-cloudguard-controller-policy"
-  user   = aws_iam_user.chkp-cg-controller-user.name
-  policy = data.aws_iam_policy_document.chkp-cg-controller-pdocument.json
+resource "aws_iam_policy" "chkp-cg-controller-sts-policy" {
+  name        = "chkp-cg-controller-sts-policy"
+  path        = "/"
+  description = "IAM Policy used to Assume roles in child account to read datacenter objects"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [ "sts:AssumeRole" ]
+        Effect   = "Allow"
+        Resource = "arn:aws:iam::*:role/CloudGuard-Controller-RO-role"
+      },
+    ]
+  })
 }
 
-data "aws_iam_policy_document" "chkp-cg-controller-sts" {
-  statement {
-    effect    = "Allow"
-    actions   = ["sts:AssumeRole"] 
-    resources = ["arn:aws:iam::*:role/CloudGuard-Controller-RO-role"]
-  }
+resource "aws_iam_user_policy_attachment" "attach-chkp-cg-controller-read-policy" {
+  user       = aws_iam_user.chkp-cg-controller-user.name
+  policy_arn = aws_iam_policy.chkp-cg-controller-read-policy.arn
 }
-resource "aws_iam_user_policy" "chkp-cg-controller-sts-policy" {
-  name   = "chkp-cloudguard-controller-policy"
-  user   = aws_iam_user.chkp-cg-controller-user.name
-  policy = data.aws_iam_policy_document.chkp-cg-controller-sts.json
+resource "aws_iam_user_policy_attachment" "attach-chkp-cg-controller-sts-policy" {
+  user       = aws_iam_user.chkp-cg-controller-user.name
+  policy_arn = aws_iam_policy.chkp-cg-controller-sts-policy.arn
 }
 
 resource "random_string" "sts-external-id" {
@@ -51,6 +68,11 @@ resource "random_string" "sts-external-id" {
   lower = true
   upper = false
 }
+
+output "my-external-id" {
+  value = random_string.sts-external-id.result
+}
+
 # Creating the Cross account role in all the child accounts
 resource "aws_cloudformation_stack_set" "cloudguard-controller-org-permissions" {
   name = "cloudguard-controller-permissions"
@@ -93,7 +115,7 @@ resource "checkpoint_management_aws_data_center_server" "root-aws-datacenter" {
   secret_access_key     = aws_iam_access_key.chkp-cg-controller-key.secret
   region                = var.aws-region
 
-  depends_on = [aws_iam_user_policy.chkp-cg-controller-policy]
+  depends_on = [aws_iam_user_policy_attachment.attach-chkp-cg-controller-read-policy]
 } 
 
 # Pulling the list of AWS accounts from the organization

@@ -92,6 +92,8 @@ resource "checkpoint_management_aws_data_center_server" "root-aws-datacenter" {
   access_key_id         = aws_iam_access_key.chkp-cg-controller-key.id
   secret_access_key     = aws_iam_access_key.chkp-cg-controller-key.secret
   region                = var.aws-region
+
+  depends_on = [aws_iam_user_policy.chkp-cg-controller-policy]
 } 
 
 # Pulling the list of AWS accounts from the organization
@@ -111,6 +113,8 @@ resource "checkpoint_management_aws_data_center_server" "child-aws-datacenters" 
   enable_sts_assume_role = true
   sts_role = "arn:aws:iam::${each.value.id}:role/CloudGuard-Controller-RO-role"
   sts_external_id = random_string.sts-external-id.result
+
+  depends_on = [aws_cloudformation_stack_set_instance.cft-deploy-organization]
 } 
 
 resource "terraform_data" "aws-account-change-tracker" {

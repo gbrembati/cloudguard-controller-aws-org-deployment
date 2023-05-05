@@ -69,10 +69,6 @@ resource "random_string" "sts-external-id" {
   upper = false
 }
 
-output "my-external-id" {
-  value = random_string.sts-external-id.result
-}
-
 # Creating the Cross account role in all the child accounts
 resource "aws_cloudformation_stack_set" "cloudguard-controller-org-permissions" {
   name = "cloudguard-controller-permissions"
@@ -131,6 +127,7 @@ resource "checkpoint_management_aws_data_center_server" "child-aws-datacenters" 
   access_key_id         = aws_iam_access_key.chkp-cg-controller-key.id
   secret_access_key     = aws_iam_access_key.chkp-cg-controller-key.secret
   region                = var.aws-region
+  ignore_warnings       = true
 
   enable_sts_assume_role = true
   sts_role = "arn:aws:iam::${each.value.id}:role/CloudGuard-Controller-RO-role"
@@ -142,7 +139,7 @@ resource "checkpoint_management_aws_data_center_server" "child-aws-datacenters" 
 resource "terraform_data" "aws-account-change-tracker" {
   input = data.aws_organizations_organization.aws-organization
 }
-resource "checkpoint_management_publish" "publish" { 
+resource "checkpoint_management_publish" "session-publish" { 
   lifecycle {
     replace_triggered_by = [
       terraform_data.aws-account-change-tracker

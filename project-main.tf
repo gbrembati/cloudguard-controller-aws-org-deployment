@@ -24,12 +24,13 @@ resource "aws_iam_policy" "chkp-cg-controller-read-policy" {
           "ec2:DescribeNetworkInterfaces",
           "ec2:DescribeSubnets",
           "ec2:DescribeVpcs",
-          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSecurityGroups",                 
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeTags",
           "ec2:DescribeVpnGateways",
           "ec2:DescribeVpnConnections",
           "ec2:DescribeCustomerGateways",
-          "elasticloadbalancing:DescribeTags",
-          "elasticloadbalancing:DescribeLoadBalancers" ]
+          "ec2:DescribeVpcEndpoints" ]
         Effect   = "Allow"
         Resource = "*"
       },

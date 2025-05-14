@@ -142,9 +142,7 @@ resource "terraform_data" "aws-account-change-tracker" {
 }
 resource "checkpoint_management_publish" "session-publish" { 
   lifecycle {
-    replace_triggered_by = [
-      terraform_data.aws-account-change-tracker
-    ]
+    replace_triggered_by = [ terraform_data.aws-account-change-tracker ]
   }
   # Would be triggered if there is a change in the list of accounts
   depends_on = [checkpoint_management_aws_data_center_server.root-aws-datacenter, checkpoint_management_aws_data_center_server.child-aws-datacenters] 
